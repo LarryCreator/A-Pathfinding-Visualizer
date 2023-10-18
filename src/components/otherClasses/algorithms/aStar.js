@@ -61,7 +61,7 @@ export function calculateNodeValues(canvasController, adjacentNodes) {
     })
 }
 export function calculateH(node, goalNode) {
-    //Chebyshev distance Heuristic
+    //Manhattan Heuristic
     const distance = new Vector2d(Math.abs(goalNode.columnIndex - node.columnIndex), Math.abs(goalNode.nodeIndex - node.nodeIndex));
     const h = distance.x + distance.y;
     return h;
