@@ -43,7 +43,7 @@ export function handleAddingToOpenList(canvasController, adjacentNodes) {
             canvasController.openNodes.push(node);
         }
         else if (nodeOnOpenNodes != undefined && !canvasController.closedNodes.includes(node)) {
-            const newG = calculateG(canvasController.currentNode, node);
+            const newG = calculateG(canvasController.currentNode);
             nodeOnOpenNodes.g = nodeOnOpenNodes.g > newG ? newG : nodeOnOpenNodes.g;  
         }
     });
@@ -53,7 +53,7 @@ export function calculateNodeValues(canvasController, adjacentNodes) {
         if (!node.parentNode) {
             node.parentNode = node.node == canvasController.grid.startNode ? null : canvasController.currentNode;
         }
-        node.g = calculateG(node, canvasController.nodes.find(element=> element.node == canvasController.grid.startNode));
+        node.g = calculateG(node);
         node.h = calculateH(node, canvasController.nodes.find(element=> element.node == canvasController.grid.targetNode));
         node.fScore = node.g + node.h;
         
@@ -61,14 +61,24 @@ export function calculateNodeValues(canvasController, adjacentNodes) {
     })
 }
 export function calculateH(node, goalNode) {
-    //Manhattan Heuristic
+    //Manhattan distance Heuristic
     const distance = new Vector2d(Math.abs(goalNode.columnIndex - node.columnIndex), Math.abs(goalNode.nodeIndex - node.nodeIndex));
     const h = distance.x + distance.y;
     return h;
 }
-export function calculateG(currentNode, startNode) {
-    const deltaX = Math.abs(startNode.columnIndex - currentNode.columnIndex);
-    const deltaY = Math.abs(startNode.nodeIndex - currentNode.nodeIndex);
-    const g = deltaX + deltaY;
+export function calculateG(currentNode) {
+    /*
+    this function objective is to get the cumulative cost from the start node to the current one
+    i accomplish that by looping backwards from this node to the start, by going through the parent nodes of the nodes
+    each parent i go through i count + 1cost of movement. Its 1 because in this grid, the cost to any direction is 1
+    */
+    let counter = 0;
+    let movementCost = 1;
+    let current = currentNode;
+    while (current.parentNode != null) {
+        counter += movementCost;
+        current = current.parentNode;
+    };
+    const g = counter;
     return g;
 }
