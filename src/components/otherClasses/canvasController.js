@@ -1,5 +1,5 @@
 import {Canvas, drawLine} from './canvas.js';
-import {Mouse} from './mouse.js';
+import {InputDetector} from './inputDetector.js';
 import {Container} from './grid.js';
 import * as aStar from './algorithms/aStar.js';
 import { Vector2d } from './vectors.js';
@@ -21,7 +21,7 @@ export class CanvasController {
         this.running = false;
         this.canvas = new Canvas(canvas, window.innerWidth, window.innerHeight, 'black');
         this.grid = new Container(20, this.canvas.height - this.canvas.height/3, this.canvas.width - this.canvas.width/3, this.canvas, navBarHeight);
-        this.mouse = new Mouse(this.canvas.canvas);
+        this.inputDetector = new InputDetector(this.canvas.canvas);
         this.selectedNode = null;
         this.createNodes();
         this.currentNode = this.nodes.find(element=> element.node == this.grid.startNode);//set current node to start node
@@ -75,7 +75,7 @@ export class CanvasController {
         // Redraw your content on the canvas here
     }
     getSelectedNode() {
-        this.selectedNode = this.grid.startNode.isSelected(this.mouse.position) ? 'start' : this.grid.targetNode.isSelected(this.mouse.position) ? 'end' : null;
+        this.selectedNode = this.grid.startNode.isSelected(this.inputDetector.position) ? 'start' : this.grid.targetNode.isSelected(this.inputDetector.position) ? 'end' : null;
     }
     clearBoard() {
         this.grid.clearObstacles();
@@ -85,7 +85,7 @@ export class CanvasController {
         this.path = [];
         outerLoop: for (let row of this.grid.grid) {
             for (let cell of row) {
-                if (cell.isSelected(this.mouse.position) && cell.fillColor == 'transparent') {
+                if (cell.isSelected(this.inputDetector.position) && cell.fillColor == 'transparent') {
                     this.grid.startNode.fillColor = this.selectedNode == 'start' ? 'transparent' : this.grid.startNode.fillColor;
                     this.grid.targetNode.fillColor = this.selectedNode == 'end' ? 'transparent' : this.grid.targetNode.fillColor;
                     cell.fillColor = this.selectedNode == 'start' ? 'orange' : 'red';
@@ -156,15 +156,15 @@ export class CanvasController {
     startLoop(ctx) {
         //canvas loop
         this.genMaze();
-        this.mouse.dragged(()=>{
+        this.inputDetector.dragged(()=>{
             for (const node of this.nodes) {
-                if (node.node.isSelected(this.mouse.position) && node.node.fillColor != 'orange' && node.node.fillColor != 'red' && !this.selectedNode) {
+                if (node.node.isSelected(this.inputDetector.position) && node.node.fillColor != 'orange' && node.node.fillColor != 'red' && !this.selectedNode) {
                     node.node.fillColor = this.obstacleColor;
                 }
             };
         }, this.canvas.canvas);
-        this.mouse.pressed(()=>{this.getSelectedNode()}, this.canvas.canvas);
-        this.mouse.released(()=>{this.selectedNode = null}, this.canvas.canvas);
+        this.inputDetector.pressed(()=>{this.getSelectedNode()}, this.canvas.canvas);
+        this.inputDetector.released(()=>{this.selectedNode = null}, this.canvas.canvas);
         document.addEventListener('clearPath', ()=>{//this is emitted from the app component
             this.running = false;
             this.stopRunning();
@@ -184,7 +184,7 @@ export class CanvasController {
             this.genMaze();
         });
         this.canvas.loop(true, ()=>{
-            if (this.mouse.isDragged && this.selectedNode && !this.running) {
+            if (this.inputDetector.isDragged && this.selectedNode && !this.running) {
                 this.moveNode();
             }
             if (this.running) {
