@@ -3,6 +3,8 @@ import {InputDetector} from './inputDetector.js';
 import {Container} from './grid.js';
 import * as aStar from './algorithms/aStar.js';
 import { Vector2d } from './vectors.js';
+import { MazeGenerator } from './algorithms/mazeGenerator.js';
+
 
 export class CanvasController {
     constructor() {
@@ -13,14 +15,15 @@ export class CanvasController {
         this.currentNode = {};
         this.path = [];
         this.obstacleColor = 'gray';
+        this.mazeGenerator = new MazeGenerator(this);
+
     }
-    initialize(navBarHeight, algo, stopRunning, canvas) {
+    initialize(navBarHeight, stopRunning, canvas) {
          //setting canvas
         this.stopRunning = stopRunning;
-        this.algo = algo;
         this.running = false;
         this.canvas = new Canvas(canvas, window.innerWidth, window.innerHeight, 'black');
-        this.grid = new Container(20, this.canvas.height - this.canvas.height/3, this.canvas.width - this.canvas.width/3, this.canvas, navBarHeight);
+        this.grid = new Container(20, this.canvas.height - this.canvas.height/3, this.canvas.width - this.canvas.width/3, this.canvas, navBarHeight, this.mazeGenerator);
         this.inputDetector = new InputDetector(this.canvas.canvas);
         this.selectedNode = null;
         this.createNodes();
@@ -39,7 +42,8 @@ export class CanvasController {
                     h: 0,
                     fScore: 0,
                     columnIndex: columnIndex,
-                    nodeIndex: cellIndex
+                    nodeIndex: cellIndex,
+                    visited: false, //this is for the maze generation. Function genMaze is located in this same file
                 };
                 this.nodes.push(newNode);
             })
@@ -71,7 +75,7 @@ export class CanvasController {
         this.grid.reset(this.canvas.middle, this.canvas.height - this.canvas.height/3, this.canvas.width - this.canvas.width/3);
         this.nodes = [];
         this.createNodes();
-        this.genMaze();
+        this.mazeGenerator.genMaze();
         // Redraw your content on the canvas here
     }
     getSelectedNode() {
@@ -98,10 +102,7 @@ export class CanvasController {
         };
     }
     runAlgorithm() {
-        if (this.algo == 'a*') {
             aStar.aStar(this);
-            
-        };
     }
     drawPath(ctx) {
         if (this.path.length > 0) {
@@ -144,18 +145,11 @@ export class CanvasController {
         };
         
     }
-    genMaze() {
-        this.nodes.forEach(node=>{
-            const val = Math.random();
-            if (val < 0.2 && node.node.fillColor != 'orange' && node.node.fillColor != 'red') {
-                node.node.fillColor = this.obstacleColor;
-            };
-        })
-    }
 
     startLoop(ctx) {
+
         //canvas loop
-        this.genMaze();
+        this.mazeGenerator.genMaze();
         this.inputDetector.dragged(()=>{
             for (const node of this.nodes) {
                 if (node.node.isSelected(this.inputDetector.position) && node.node.fillColor != 'orange' && node.node.fillColor != 'red' && !this.selectedNode) {
@@ -181,7 +175,7 @@ export class CanvasController {
             this.stopRunning();
             this.reset();
             this.grid.clearObstacles();
-            this.genMaze();
+            this.mazeGenerator.genMaze();
         });
         this.canvas.loop(true, ()=>{
             if (this.inputDetector.isDragged && this.selectedNode && !this.running) {
@@ -197,6 +191,7 @@ export class CanvasController {
             }
             this.grid.renderGrid(ctx);
         })
+        
     }
 }
 
@@ -220,3 +215,4 @@ export function getAdjacentNodes(canvasController, currentNode) {
     }
     return adjacentNodes;
 }
+
